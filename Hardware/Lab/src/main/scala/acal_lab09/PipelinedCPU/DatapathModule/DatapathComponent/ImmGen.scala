@@ -22,7 +22,7 @@ class ImmGen extends Module{
         R_type -> 0.S,
 
         //I-type
-        I_type -> inst_shift(31,20).asSInt,
+        I_type -> inst_shift(31,20).asSInt, // TODO ql hw4 因為 bseti, bclri, binvi, bexti, rori 的 imm 在 instr[25,20] 只有 6 位，這裡可能需要修改？ REV8 需要擴展的是 instr[19,15] 共 5 位？
 
         //B-type
         B_type -> Cat(inst_shift(31),
