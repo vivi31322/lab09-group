@@ -51,12 +51,43 @@ instr_type parse_instr(char* tok) {
 
 	//instruction added
 	if ( streq(tok , "mul")) return MUL;
-    if ( streq(tok , "vle8_v")) return VLE8_V;
-    if ( streq(tok , "vse8_v")) return VSE8_V;
-    if ( streq(tok , "vadd_vv")) return VADD_VV;
-    if ( streq(tok , "vmul_vx")) return VMUL_VX;
-    //*****************
+	if ( streq(tok , "vle8_v")) return VLE8_V;
+	if ( streq(tok , "vse8_v")) return VSE8_V;
+	if ( streq(tok , "vadd_vv")) return VADD_VV;
+	if ( streq(tok , "vmul_vx")) return VMUL_VX;
+	//*****************
 
+	//hw9-4 inst. added by board2
+	if (streq(tok, "andn")) return ANDN;
+	if (streq(tok, "clz")) return CLZ;
+	if (streq(tok, "cpop")) return CPOP;
+	if (streq(tok, "ctz")) return CTZ;
+	if (streq(tok, "max")) return MAX;
+	if (streq(tok, "maxu")) return MAXU;
+	if (streq(tok, "min")) return MIN;
+	if (streq(tok, "minu")) return MINU;
+	if (streq(tok, "orc.b")) return ORC_B;
+	if (streq(tok, "orn")) return ORN;
+	if (streq(tok, "rev8")) return REV8;
+	if (streq(tok, "rol")) return ROL;
+	if (streq(tok, "ror")) return ROR;
+	if (streq(tok, "rori")) return RORI;
+	if (streq(tok, "bclr")) return BCLR;
+	if (streq(tok, "bclri")) return BCLRI;
+	if (streq(tok, "bext")) return BEXT;
+	if (streq(tok, "bexti")) return BEXTI;
+	if (streq(tok, "binv")) return BINV;
+	if (streq(tok, "binvi")) return BINVI;
+	if (streq(tok, "bset")) return BSET;
+	if (streq(tok, "bseti")) return BSETI;
+	if (streq(tok, "sext.b")) return SEXT_B;
+	if (streq(tok, "sext.h")) return SEXT_H;
+	if (streq(tok, "sh1add")) return SH1ADD;
+	if (streq(tok, "sh2add")) return SH2ADD;
+	if (streq(tok, "sh3add")) return SH3ADD;
+	if (streq(tok, "xnor")) return XNOR;
+	if (streq(tok, "zext.h")) return ZEXT_H;
+	//*****************
 
 	// 2r->1r
 	if ( streq(tok, "add") ) return ADD;
@@ -599,6 +630,28 @@ int parse_instr(int line, char* ftok, instr* imem, int memoff, label_loc* labels
 		        return 1;
 			//****************
 
+			//hw9-4 inst. added by board2
+			/*case MULH:case MULHSU:case MULHU:case DIV:case DIVU:case REM:case REMU:
+			case CLMUL:case CLMULH:case CLMULR:*/case ANDN:case MAX:case MAXU:case MIN:case MINU:
+			case ORN:case ROL:case ROR:case BCLR:case BEXT:case BINV:case BSET:case SH1ADD:
+			case SH2ADD:case SH3ADD:case XNOR:
+			     if ( !o1 || !o2 || !o3 || o4 ) print_syntax_error( line,  "Invalid format" );
+			 	    i->a1.reg = parse_reg(o1 , line);
+			 	    i->a2.reg = parse_reg(o2 , line);
+			 	    i->a3.reg = parse_reg(o3 , line);
+			     return 1;
+			case CLZ:case CPOP:case CTZ:case ORC_B:case REV8:case SEXT_B:case SEXT_H:case ZEXT_H:
+				if (!o1 || !o2 || o3 || o4) print_syntax_error(line, "Invalid format");
+					i->a1.reg = parse_reg(o1, line);
+					i->a2.reg = parse_reg(o2, line);
+				return 1;
+			case RORI:case BCLRI:case BEXTI:case BINVI:case BSETI:
+				if (!o1 || !o2 || !o3 || o4) print_syntax_error(line, "Invalid format");
+					i->a1.reg = parse_reg(o1, line);
+					i->a2.reg = parse_reg(o2, line);
+					i->a3.imm = signextend(parse_imm(o3, 5, line), 5);
+				return 1;
+			//****************
 
 			case JAL:
 				if ( o2 ) { // two operands, reg, label
@@ -881,7 +934,113 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
       		case MUL: rf[i.a1.reg] = rf[i.a2.reg] * rf[i.a3.reg]; break;
 			//*****************
 
+			//hw9-4 inst. added by board2
+			case ANDN: rf[i.a1.reg] = rf[i.a2.reg] &( ~rf[i.a3.reg]); break;
+			case CLZ:
+				rf[i.a1.reg] = 32;
+				for (int j = 0; j < 32;j++) {
+					if ((rf[i.a2.reg] << j) >> (32 - 1)) {
+						rf[i.a1.reg] = j;
+						break;
+					}
+				}
+				break;
+			case CTZ:
+				rf[i.a1.reg] = 32;
+				for (int j = 0; j < 32; j++) {
+					if ((rf[i.a2.reg] >> j)&(uint32_t)1) {
+						rf[i.a1.reg] = j;
+						break;
+					}
+				}
+				break;
+			case CPOP:
+				rf[i.a1.reg] = 0;
+				for (int j = 0; j < 32; j++) {
+					rf[i.a1.reg] += (rf[i.a2.reg] >> j)&(uint32_t)1;
+				}
+				break;
+			case MAX:
+				rf[i.a1.reg] = (int32_t)rf[i.a2.reg] > (int32_t)rf[i.a3.reg] ? rf[i.a2.reg] : rf[i.a3.reg];
+				break;
+			case MIN:
+				rf[i.a1.reg] = (int32_t)rf[i.a2.reg] < (int32_t)rf[i.a3.reg] ? rf[i.a2.reg] : rf[i.a3.reg];
+				break;
+			case MAXU:
+				rf[i.a1.reg] = rf[i.a2.reg] > rf[i.a3.reg] ? rf[i.a2.reg] : rf[i.a3.reg];
+				break;
+			case MINU:
+				rf[i.a1.reg] = rf[i.a2.reg] < rf[i.a3.reg] ? rf[i.a2.reg] : rf[i.a3.reg];
+				break;
+			
+			case REV8:
+			//尚未更正 lab07 by board2
+				
+				//rev8 (rd)a1, (rs1)a2
+				rf[i.a1.reg]=0;
+				for(int k=0;k<=24;k+=8){
+					for(int j=0;j<8;j++){
+						rf[i.a1.reg]+=((rf[i.a2.reg]>>(k+j))&(uint32_t)1)<<(k+7-j);	
+					}
+				}
+				break;
+			case ROR:
+				rf[i.a1.reg]=(rf[i.a2.reg]>>(rf[i.a3.reg]&31))|(rf[i.a2.reg]<<(32-(rf[i.a3.reg]&31)));
+				break;
+			case RORI:
+				//rf[i.a1.reg]=(rf[i.a2.reg]>>(rf[i.a3.imm]&31))|(rf[i.a2.reg]<<(32-(rf[i.a3.imm]&31)));
+				rf[i.a1.reg] = (rf[i.a2.reg]>>(i.a3.imm&31))|(rf[i.a2.reg]<<(32-(i.a3.imm&31)));
+				break;
+			case ROL:
+				rf[i.a1.reg]=(rf[i.a2.reg]<<(rf[i.a3.reg]&31))|(rf[i.a2.reg]>>(32-(rf[i.a3.reg]&31)));
+      				break;
+			case BCLR:
+				rf[i.a1.reg] = (rf[i.a2.reg] & (~(1 << (rf[i.a3.reg] & (MAX_LABEL_LEN - 1)))));
+				break;
+			case BEXT:
+				rf[i.a1.reg] = (rf[i.a2.reg] >> (rf[i.a3.reg] & (MAX_LABEL_LEN - 1))) & 1;
+				break;
+			case BSET:
+				rf[i.a1.reg] = (rf[i.a2.reg] | (1 << (rf[i.a3.reg] & (MAX_LABEL_LEN - 1))));
+				break;
+			case BINV:
+				rf[i.a1.reg] = (rf[i.a2.reg] ^ (1 << (rf[i.a3.reg] & (MAX_LABEL_LEN - 1))));
+				break;
+			case BCLRI: 
+				rf[i.a1.reg] = (rf[i.a2.reg] & (~(1 << (i.a3.imm & (MAX_LABEL_LEN - 1)))));
+				break;
+			case BEXTI:
+				rf[i.a1.reg] = (rf[i.a2.reg] >> (i.a3.imm & (MAX_LABEL_LEN - 1))) & 1;
+				break;
+			case BSETI:
+				rf[i.a1.reg] = (rf[i.a2.reg] | (1 << (i.a3.imm & (MAX_LABEL_LEN - 1))));
+				break;
+			case BINVI:
+				rf[i.a1.reg] = (rf[i.a2.reg] ^ (1 << (i.a3.imm & (MAX_LABEL_LEN - 1))));
+				break;
+			case ORC_B: 
+				for (int idx=0; idx<4; idx++) { // 針對 rs 的 4 bytes 分別判斷，來設置 rd 的對應 byte
+					uint8_t byte = (rf[i.a2.reg] >> (idx*8)) & 0xFF;
+					if (byte == 0) rf[i.a1.reg] &= ~(0xFF << (idx * 8)); // 若 rs 的此 byte 為 0，則 rd 的對應 byte 全 0
+					else rf[i.a1.reg] |= 0xFF << (idx * 8);				 // 若 rs 的此 byte 不全為 0，則 rd 的對應 byte 為 0xff
+				}
+				break;
+			case ORN: rf[i.a1.reg] = rf[i.a2.reg] | ~rf[i.a3.reg]; break; //  X(rd) = X(rs1) | ~X(rs2);
+			case SEXT_B: rf[i.a1.reg] = static_cast<int>((int8_t) rf[i.a2.reg]); break;  // X(rd) = EXTS(X(rs)[7..0]);
+			case SEXT_H: rf[i.a1.reg] = static_cast<int>((int16_t) rf[i.a2.reg]); break; // X(rd) = EXTS(X(rs)[15..0]);
+			case SH1ADD:
+				rf[i.a1.reg] = rf[i.a3.reg] + (rf[i.a2.reg] << 1);
+				break;
+			case SH2ADD:
+				rf[i.a1.reg] = rf[i.a3.reg] + (rf[i.a2.reg] << 2);
+				break;
+			case SH3ADD:
+				rf[i.a1.reg] = rf[i.a3.reg] + (rf[i.a2.reg] << 3);
+				break;
 
+			case XNOR: rf[i.a1.reg] = ~(rf[i.a2.reg] ^ rf[i.a3.reg]); break;
+			case ZEXT_H: rf[i.a1.reg] = rf[i.a2.reg] & 0x0000ffff; break;
+			//*****************
 
 			case ADD: rf[i.a1.reg] = rf[i.a2.reg] + rf[i.a3.reg]; break;
 			case SUB: rf[i.a1.reg] = rf[i.a2.reg] - rf[i.a3.reg]; break;
