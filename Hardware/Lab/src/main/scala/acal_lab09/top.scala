@@ -36,7 +36,9 @@ class top extends Module {
         val WB_wdata = Output(UInt(32.W))
         val EXE_Jump = Output(Bool())
         val EXE_Branch = Output(Bool())
-
+        /* swli Lab 9-3 */
+        val EXE_opcode = Output(UInt(7.W))
+        /* swli Lab 9-3 */
     })
 
     val cpu = Module(new PiplinedCPU(15,32))
@@ -86,6 +88,9 @@ class top extends Module {
     io.WB_wdata := cpu.io.WB_wdata
     io.EXE_Jump := cpu.io.EXE_Jump
     io.EXE_Branch := cpu.io.EXE_Branch
+    /* swli Lab 9-3 */
+    io.EXE_opcode := cpu.io.EXE_opcode
+    /* swli Lab 9-3 */
 }
 
 
