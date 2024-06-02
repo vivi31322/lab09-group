@@ -471,6 +471,253 @@ void translate_to_machine_code(uint8_t* mem,instr* imem, char* argv1){
 				binary += 0b0000000 << 25;   //funct7
 			break;
 
+			//hw9-4(hw8-4) & hw8-3 inst. added by board2
+			/*MULH,
+			MULHSU
+			MULHU
+			DIV
+			DIVU
+			REM
+			REMU
+			CLMUL
+			CLMULH
+			CLMULR
+			*/
+			case ANDN:
+				//因為6碼，最末碼一定是11
+				//新增的幾乎都是R & I-type, opcode same
+				//inst. rd r1 r2 -> rd=a1 r1=a2 r2=a3
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b111 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0100000 << 25;   //funct7
+			break;
+			case CLZ:
+			    binary = (0x04 << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b001 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += 0b00000 << 20;    
+				binary += 0b0110000 << 25;
+			break;
+			case CPOP:
+			    binary = (0x04 << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b001 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += 0b00010 << 20;    
+				binary += 0b0110000 << 25;
+			break;
+			case CTZ:
+			    binary = (0x04 << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b001 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += 0b00001 << 20;    
+				binary += 0b0110000 << 25;    
+			break;
+			case MAX:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b110 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0000101 << 25;   //funct7
+			break;
+			case MAXU:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b111 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0000101 << 25;   //funct7
+			break;
+			case MIN:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b100 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0000101 << 25;   //funct7
+			break;
+			case MINU:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b101 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0000101 << 25;   //funct7
+			break;
+			case ORC_B:
+			    binary = (0x04 << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b101 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += 0x287 << 20;    
+			break;
+			case ORN:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b110 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0100000 << 25;   //funct7
+			break;
+			case REV8:
+			    binary = (0x04 << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b101 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs
+				binary += 0x698 << 20;    
+			break;
+			case ROL:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b001 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0110000 << 25;   //funct7
+			break;
+			case ROR:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b101 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0110000 << 25;   //funct7
+			break;
+			case RORI:
+			    binary = (0x04 << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b101 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.imm << 20;    //imm(5 bits)
+				binary += 0b0110000 << 25;    
+			break;
+			case BCLR:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b001 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0100100 << 25;  //funct7
+			break;
+			case BCLRI:
+			    binary = (0x04 << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b001 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.imm << 20;    //imm(5 bits)
+				binary += 0b0100100 << 25;
+			break;
+			case BEXT:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b101 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0100100 << 25;   //funct7
+			break;
+			case BEXTI:
+			    binary = (0x04 << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b101 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.imm << 20;    //imm(5 bits)
+				binary += 0b0100100 << 25;
+			break;
+			case BINV:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b001 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0110100 << 25;   //funct7
+			break;
+			case BINVI:
+			    binary = (0x04 << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b001 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.imm << 20;    //imm(5 bits)
+				binary += 0b0110100 << 25;
+			break;
+			case BSET:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b001 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0010100 << 25;   //funct7
+			break;
+			case BSETI:
+			    binary = (0x04 << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b001 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.imm << 20;    //imm(5 bits)
+				binary += 0b0010100 << 25;
+			break;
+			case SEXT_B:
+			    binary = (0x04 << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b001 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += 0b00100 << 20;    
+				binary += 0b0110000 << 25;    
+			break;
+			case SEXT_H:
+			    binary = (0x04 << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b001 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += 0b00101 << 20;    
+				binary += 0b0110000 << 25;
+			break;
+			case SH1ADD:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b010 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0010000 << 25;   //funct7
+			break;
+			case SH2ADD:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b100 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0010000 << 25;   //funct7
+			break;
+			case SH3ADD:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b110 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0010000 << 25;   //funct7
+			break;
+			case XNOR:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b100 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += i.a3.reg << 20;    //rs2
+				binary += 0b0100000 << 25;   //funct7
+			break;
+			case ZEXT_H:
+				binary = (0x0C << 2) + 0x03; //opcode
+				binary += i.a1.reg << 7;     //rd
+				binary += 0b100 << 12;       //funct3
+				binary += i.a2.reg << 15;    //rs1
+				binary += 0b00000 << 20;    //rs2
+				binary += 0b0000100 << 25;   //funct7
+			break;
+			//*********end*************
+
 			case UNIMPL:
 			default:
 				printf( "Reached an unimplemented instruction!\n" );
@@ -493,16 +740,19 @@ void translate_to_machine_code(uint8_t* mem,instr* imem, char* argv1){
     
     
 	//write five "nop" instructions at the end of the inst_file
-	for(int t=0; t<5;t++)
+	/*for(int t=0; t<5;t++)
 	{
 		fprintf(inst_file, "nop\n");
 		fprintf(mch_file, "%02x\n", 0x00);
 		fprintf(mch_file, "%02x\n", 0x00);
 		fprintf(mch_file, "%02x\n", 0x00);
 		fprintf(mch_file, "%02x\n", 0x00);
-	}
+	}*/
 	//write "hcf" in the inst_file
-	fprintf(inst_file, "hcf\n");
+	//fprintf(inst_file, "hcf\n");
+	//助教的寫法會多一行 by board2
+  //不知為何 lab8 emulator 可以自己辨別有 hcf 就不加但這份不會
+	fprintf(inst_file, "hcf");
 	fprintf(mch_file, "%02x\n", 0x00);
 	fprintf(mch_file, "%02x\n", 0x00);
 	fprintf(mch_file, "%02x\n", 0x00);
