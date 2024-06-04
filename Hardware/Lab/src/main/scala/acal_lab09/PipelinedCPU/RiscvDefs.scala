@@ -15,13 +15,12 @@ object opcode_map { // ql 指令低 7 位：instruction[6:0]
   val JALR = "b1100111".U
   val JAL = "b1101111".U
   val OP_IMM = "b0010011".U // ql hw4 eg. CLZ, CTZ, CPOP, SEXT.B, SEXT.H, BSETI, BCLRI, BINVI, BEXTI, RORI, REV8, ORC.B
-  val OP = "b0110011".U     // ql hw4 eg. ANDN, ORN, XNOR, MIN, MINU, MAX, MAXU, BSET, BCLR, BINV, BEXT, ROR, ROL, SHA1ADD~SHA3ADD
+  val OP = "b0110011".U     // ql hw4 eg. ANDN, ORN, XNOR, MIN, MINU, MAX, MAXU, BSET, BCLR, BINV, BEXT, ROR, ROL, SHA1ADD~SHA3ADD, ZEXT.H
   val AUIPC = "b0010111".U
   val LUI = "b0110111".U
   val FENCE = "b0001111".U // ql: fence, fence.i
   val SYS = "b1110011".U   // ql: sbreak, scall, rdcycle(h), rdtime(h), rdinstret(h)
   val HCF = "b0001011".U
-  val ZEXT_H = "b0111011".U // TODO ql 待確定 hw4 zext.h 的 opcode https://five-embeddev.com/riscv-bitmanip/1.0.0/bitmanip.html#insns-zext_h
 }
 
 object condition { // [func3] inst(14, 12)
@@ -81,6 +80,9 @@ object alu_op_map { // ql 組成格式：{intr[31,25], intr[24,20], intr[14,12]}
   val SHA1ADD = "b0010000_11111_010".U
   val SHA2ADD = "b0010000_11111_100".U
   val SHA3ADD = "b0010000_11111_110".U
+  //
+  val ZEXT_H  = "b0000100_00000_100".U
+  val REV8    = "b0110100_11000_101".U // TODO QA ql hw4 rev8 的低七位是 OP_IMM "b0010011"，但是 rev8 看起來不用 extension 啊？？？？所以在 alu_op_map 中還是加上 REV8
   //--------
 }
 

@@ -74,6 +74,8 @@ class Controller(memAddrWidth: Int) extends Module {
   val EXE_opcode = io.EXE_Inst(6, 0)
   val EXE_funct3 = io.EXE_Inst(14, 12)
   val EXE_funct7 = io.EXE_Inst(31, 25)
+  val EXE_rd = io.EXE_Inst(11, 7)
+  val EXE_31_20 = io.EXE_Inst(31,20)
 
   val MEM_opcode = io.MEM_Inst(6, 0)
   val MEM_funct3 = io.MEM_Inst(14, 12)
@@ -273,8 +275,11 @@ class Controller(memAddrWidth: Int) extends Module {
   is_srai := (EXE_opcode === OP_IMM && 
               EXE_funct7 === "b0100000".U && 
               EXE_funct3 === "b101".U) 
+  // io.E_BSel := 1.U // To Be Modified
+  val is_EXE_rev8 = Mux(EXE_31_20 === "b011010011000".U && EXE_funct3 === "101".U && EXE_opcode === OP_IMM, true.B, false.B) // ql hw4 判斷是否為 rev8，這條指令的 opcode 是 OP_IMM，但是用到的都是 regfile 中的，不會用到 immediate number
+  // io.E_BSel := Mux(EXE_opcode === OP || is_EXE_rev8, 0.U, 1.U) // ql OP(0b0110011) 代表 R-type，或者是 rev8，否則使用 ImmGen // TODO 要多測試一下這裡的判斷
 
-  io.E_ALUSel := MuxLookup(EXE_opcode, (Cat(0.U(7.W), "b11111".U, 0.U(3.W))), Seq(
+  io.E_ALUSel := MuxLookup(EXE_opcode, (Cat(0.U(7.W), "b11111".U, 0.U(3.W))), Seq( // TODO ql hw4 待確認需不需要修改 imm 的判斷 eg. bseti, binvi, ...
     OP -> (Cat(EXE_funct7, "b11111".U, EXE_funct3)),
     OP_IMM -> Mux(is_srai, Cat(EXE_funct7, "b11111".U, EXE_funct3), (Cat(0.U(7.W), "b11111".U, EXE_funct3))),
   )) // To Be Modified, default: add
