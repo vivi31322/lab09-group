@@ -19,6 +19,14 @@ class topTest(dut:top) extends PeekPokeTester(dut){
     var Conditional_Branch_Hit_Count = 0
     var Unconditional_Branch_Hit_Count = 0
     var Flush_Count = 0
+
+    var Mem_Read_Stall_Cycle_Count = 0 // Count cycles stalled due to memory read.
+    var Mem_Write_Stall_Cycle_Count = 0 // Count cycles stalled due to memory write.
+    // these two will always be zero since memory r/w can complete in 1 cycle
+    var Mem_Read_Request_Count = 0 // Count Load-type instruction.
+    var Mem_Write_Request_Count = 0 // Count Store-type instruction.
+    var Mem_Read_Bytes_Count = 0 // Count bytes read in Load-type instruction(lw/lh/lb - all 4 bytes are occupied).
+    var Mem_Write_Bytes_Count = 0 // Count the instructions finished by the CPU.
     /* Lab 9_3 performance counter */
 
     while(!peek(dut.io.Hcf)){
@@ -44,6 +52,9 @@ class topTest(dut:top) extends PeekPokeTester(dut){
 
         var EXE_Jump = peek(dut.io.EXE_Jump).toInt
         var EXE_Branch = peek(dut.io.EXE_Branch).toInt
+        /* swli Lab 9-3 */
+        var EXE_opcode = peek(dut.io.EXE_opcode).toInt
+        /* swli Lab 9-3 */
 
         println(s"[PC_IF ]${"%8d".format(PC_IF)} [Inst] ${"%-25s".format(lines(PC_IF>>2))} ")
         println(s"[PC_ID ]${"%8d".format(PC_ID)} [Inst] ${"%-25s".format(lines(PC_ID>>2))} ")
@@ -60,7 +71,7 @@ class topTest(dut:top) extends PeekPokeTester(dut){
         println(s"[Flush ] ${"%1d".format(Flush)} [Stall_MA ] ${"%1d".format(Stall_MA)} [Stall_DH ] ${"%1d".format(Stall_DH)} ")
         println("==============================================")
 
-        /* Lab 10_3 performance counter */
+        /* Lab 9_3 performance counter */
         Cycle_Count += 1 //Cycle
         if(Stall_MA==0 && Stall_DH==0){
             Inst_Count += 1   // Not Stall, read inst
@@ -70,7 +81,7 @@ class topTest(dut:top) extends PeekPokeTester(dut){
                 if(Flush == 0){
                     Conditional_Branch_Hit_Count += 1
                 }else{
-                    Flush_Count += 1
+                    Flush_Count += 1 // prediction miss
                 }
             }
             if(EXE_Jump==1){
@@ -78,12 +89,23 @@ class topTest(dut:top) extends PeekPokeTester(dut){
                 if(Flush == 0){
                     Unconditional_Branch_Hit_Count += 1
                 }else{
-                    Flush_Count += 1
+                    Flush_Count += 1 // prediction miss
                 }
             }
-        }
-        /* Lab 10_3 performance counter */
 
+            /* swli Lab 9-3 */
+            if(EXE_opcode==3){ // LOAD
+                Mem_Read_Request_Count += 1
+            }else if(EXE_opcode==35){ // STORE
+                Mem_Write_Request_Count += 1
+            }
+            /* swli Lab 9-3 */
+            
+        }else if(Flush == 1){
+            Flush_Count += 1 // stall flush
+        }
+
+        /* Lab 9_3 performance counter */
 
         step(1)
     }
@@ -125,15 +147,27 @@ class topTest(dut:top) extends PeekPokeTester(dut){
     println(s"[Conditional Branch Hit Count   ] ${"%8d".format(Conditional_Branch_Hit_Count)}")
     println(s"[Unconditional Branch Hit Count ] ${"%8d".format(Unconditional_Branch_Hit_Count)}")
     println(s"[Flush Count                    ] ${"%8d".format(Flush_Count)}")
-
-
+    /* swli Lab 9-3 */
+    Mem_Read_Bytes_Count = Mem_Read_Request_Count * 4
+    Mem_Write_Bytes_Count = Mem_Write_Request_Count * 4
+    println(s"[Mem Read Stall Cycle Count     ] ${"%8d".format(Mem_Read_Stall_Cycle_Count)}")
+    println(s"[Mem Write Stall Cycle Count    ] ${"%8d".format(Mem_Write_Stall_Cycle_Count)}")
+    println(s"[Mem Read Request Count         ] ${"%8d".format(Mem_Read_Request_Count)}")
+    println(s"[Mem Write Request Count        ] ${"%8d".format(Mem_Write_Request_Count)}")
+    println(s"[Mem Read Bytes Count           ] ${"%8d".format(Mem_Read_Bytes_Count)}")
+    println(s"[Mem Write Bytes Count          ] ${"%8d".format(Mem_Write_Bytes_Count)}")
+    /* swli Lab 9-3 */
     // Performance Analysis
     println("==============================================================")
     println("Performance Analysis:")
-    println(s"[CPI                            ] ${"%8f".format(Cycle_Count.toFloat/Inst_Count.toFloat)}")
+    println(s"[CPI                                  ] ${"%8f".format(Cycle_Count.toFloat/Inst_Count.toFloat)}")
+    /* swli Lab 9-3 */
+    println(s"[Average Mem Read Request Stall Cycle ] ${"%8f".format(Mem_Read_Stall_Cycle_Count.toFloat/Mem_Read_Request_Count.toFloat)}")
+    println(s"[Average Mem Write Request Stall Cycle] ${"%8f".format(Mem_Write_Stall_Cycle_Count.toFloat/Mem_Write_Request_Count.toFloat)}")
+    println(s"[Total Bus bandwidth requiement       ] ${"%8d".format(Mem_Read_Bytes_Count+Mem_Write_Bytes_Count)}")
+    /* swli Lab 9-3 */
     println("==============================================================")
     /* Lab 9_3 performance counter */
-
 }
 
 object topTest extends App{

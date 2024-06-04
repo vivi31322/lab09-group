@@ -11,9 +11,19 @@ class Path_EXE(addrWidth:Int) extends Module {
         val EXE_imm_in = Input(UInt(32.W))
         val EXE_rs1_rdata_in = Input(UInt(32.W))
         val EXE_rs2_rdata_in = Input(UInt(32.W))
+        /* swli forwarding */
+        val EXE_forward_exe_in = Input(UInt(32.W))
+        val EXE_forward_mem_in = Input(UInt(32.W))
+        val EXE_forward_wb_in = Input(UInt(32.W))
+        /* swli forwarding */
+
         // control signal
         val E_ASel = Input(UInt(2.W))
         val E_BSel = Input(Bool())
+        /* swli forwarding */
+        val E_AForward = Input(UInt(2.W))
+        val E_BForward = Input(UInt(2.W))
+        /* swli forwarding */
         val E_BrUn = Input(Bool())
         val E_ALUSel = Input(UInt(15.W))
 
@@ -35,20 +45,37 @@ class Path_EXE(addrWidth:Int) extends Module {
     //Branch Comparator
     val bc = Module(new BranchComp)
     bc.io.BrUn := io.E_BrUn
-    bc.io.src1 := io.EXE_rs1_rdata_in
-    bc.io.src2 := io.EXE_rs2_rdata_in
+    // bc.io.src1 := io.EXE_rs1_rdata_in
+    // bc.io.src2 := io.EXE_rs2_rdata_in
+    /* swli forwarding */
+    val forward_sel_rs1 = Wire(UInt(32.W))
+    val forward_sel_rs2 = Wire(UInt(32.W))
+    forward_sel_rs1 := MuxLookup(io.E_AForward, io.EXE_rs1_rdata_in, Seq(
+        1.U -> io.EXE_forward_mem_in,
+        2.U -> io.EXE_forward_wb_in,
+        3.U -> io.EXE_forward_exe_in,
+    ))
+    forward_sel_rs2 := MuxLookup(io.E_BForward, io.EXE_rs2_rdata_in, Seq(
+        1.U -> io.EXE_forward_mem_in,
+        2.U -> io.EXE_forward_wb_in,
+        3.U -> io.EXE_forward_exe_in,
+    ))
+    bc.io.src1 := forward_sel_rs1
+    bc.io.src2 := forward_sel_rs2
+    /* swli forwarding */
     io.E_BrEq := bc.io.BrEq
     io.E_BrLT := bc.io.BrLT
 
     //ALU
     val alu = Module(new ALU)
-    alu_src1 := MuxLookup(io.E_ASel,io.EXE_rs1_rdata_in,Seq(
-        0.U -> io.EXE_rs1_rdata_in,
+    alu_src1 := MuxLookup(io.E_ASel,forward_sel_rs1,Seq(
+        //0.U -> io.EXE_rs1_rdata_in,
         1.U -> io.EXE_pc_in,
-        2.U -> 0.U(32.W)
+        2.U -> 0.U(32.W),
+        
     ))
-    alu_src2 := MuxLookup(io.E_BSel,io.EXE_rs2_rdata_in,Seq(
-        0.U -> io.EXE_rs2_rdata_in,
+    alu_src2 := MuxLookup(io.E_BSel,forward_sel_rs2,Seq(
+        //0.U -> io.EXE_rs2_rdata_in,
         1.U -> io.EXE_imm_in,
     ))
     alu.io.src1 := alu_src1
@@ -57,7 +84,8 @@ class Path_EXE(addrWidth:Int) extends Module {
     io.EXE_alu_out := alu.io.out
 
     // other IO
-    io.EXE_rs2_rdata_out := io.EXE_rs2_rdata_in
+    //io.EXE_rs2_rdata_out := io.EXE_rs2_rdata_in
+    io.EXE_rs2_rdata_out := forward_sel_rs2
     io.EXE_target_pc_out := alu.io.out(addrWidth-1,0) // pc target from alu out
     io.alu_src1 := alu_src1
     io.alu_src2 := alu_src2
