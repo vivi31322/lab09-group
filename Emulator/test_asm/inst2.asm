@@ -17,7 +17,7 @@ addi x31, x0, 0xfff
 ctz x1, x30
 andn x3, x16, x17
 max x4, x31, x25
-minu x5, x19, x31
+minu x2, x19, x31
 lui x5, 0x48c01
 addi x5, x5, 0x0a4
 sext.h x6, x5
