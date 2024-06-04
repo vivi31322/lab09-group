@@ -423,7 +423,9 @@ void translate_to_machine_code(uint8_t* mem,instr* imem, char* argv1){
 			
 			case HCF:
 			    binary = 0x0000000B;
-				//dexit = true;
+				  //board2 這裡跟lab8不一樣
+					//dexit = true;(原本lab9)
+					dexit = true;
 			break;
 
 			case MUL:
