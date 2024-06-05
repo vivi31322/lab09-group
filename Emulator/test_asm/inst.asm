@@ -29,5 +29,10 @@ rori x12, x23, 0xc
 sh2add x13, x17, x18
 rev8 x14, x25
 orc.b x15, x25
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
+addi x0, x0, 0
 hcf
 hcf

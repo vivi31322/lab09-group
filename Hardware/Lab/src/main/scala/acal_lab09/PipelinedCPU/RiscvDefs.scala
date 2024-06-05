@@ -4,15 +4,19 @@ import chisel3._
 import chisel3.util._
 
 // ql RV32I reference: https://www.cs.unh.edu/~pjh/courses/cs520/15spr/riscv-rv32i-instructions.pdf
+// ql Bitmanip reference: 
+//  - https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/bitmanip-draft.pdf p43 table
+//  - https://tools.cloudbear.ru/docs/riscv-bitmanip-1.0.0-20210612.pdf
+//  - https://five-embeddev.com/riscv-bitmanip/1.0.0/bitmanip.html
 
-object opcode_map {
+object opcode_map { // ql 指令低 7 位：instruction[6:0]
   val LOAD = "b0000011".U
   val STORE = "b0100011".U
   val BRANCH = "b1100011".U
   val JALR = "b1100111".U
   val JAL = "b1101111".U
-  val OP_IMM = "b0010011".U
-  val OP = "b0110011".U
+  val OP_IMM = "b0010011".U // ql hw4 eg. CLZ, CTZ, CPOP, SEXT.B, SEXT.H, BSETI, BCLRI, BINVI, BEXTI, RORI, REV8, ORC.B
+  val OP = "b0110011".U     // ql hw4 eg. ANDN, ORN, XNOR, MIN, MINU, MAX, MAXU, BSET, BCLR, BINV, BEXT, ROR, ROL, SHA1ADD~SHA3ADD, ZEXT.H
   val AUIPC = "b0010111".U
   val LUI = "b0110111".U
   val FENCE = "b0001111".U // ql: fence, fence.i
@@ -38,7 +42,7 @@ object inst_type {
   val U_type = 5.U
 }
 
-object alu_op_map { // QA ql 應該只要 opcode_map 再搭上 10-bit(funct7+funct3) 就好？
+object alu_op_map { // ql 組成格式：{intr[31,25], intr[24,20], intr[14,12]}，若中間五碼為 5'b11111，代表這5碼其實沒有用到 (eg. 可能是 rs2 的位置)
   val ADD = "b0000000_11111_000".U
   val SLL = "b0000000_11111_001".U
   val SLT = "b0000000_11111_010".U
@@ -49,6 +53,40 @@ object alu_op_map { // QA ql 應該只要 opcode_map 再搭上 10-bit(funct7+fun
   val AND = "b0000000_11111_111".U
   val SUB = "b0100000_11111_000".U
   val SRA = "b0100000_11111_101".U
+  //-------- hw4 ql
+  // 中間五碼：instr[24,20] 不一樣
+  val CLZ     = "b0110000_00000_001".U
+  val CTZ     = "b0110000_00001_001".U
+  val CPOP    = "b0110000_00010_001".U
+  val SEXT_B  = "b0110000_00100_001".U
+  val SEXT_H  = "b0110000_00101_001".U
+  // 末三碼：instr[14,12] 不一樣，注意要與原本 hw1 的 SUB, SRA 區分
+  val ANDN    = "b0100000_11111_111".U
+  val ORN     = "b0100000_11111_110".U
+  val XNOR    = "b0100000_11111_100".U
+  // 末三碼：instr[14,12] 不一樣
+  val MIN     = "b0000101_11111_100".U
+  val MINU    = "b0000101_11111_101".U
+  val MAX     = "b0000101_11111_110".U
+  val MAXU    = "b0000101_11111_111".U
+  //
+  val BSET    = "b0010100_11111_001".U
+  val BCLR    = "b0100100_11111_001".U
+  val BINV    = "b0110100_11111_001".U
+  val BEXT    = "b0100100_11111_101".U
+  // 末三碼：instr[14,12] 不一樣
+  val ROR     = "b0110000_11111_101".U
+  val ROL     = "b0110000_11111_001".U
+  //
+  val SHA1ADD = "b0010000_11111_010".U
+  val SHA2ADD = "b0010000_11111_100".U
+  val SHA3ADD = "b0010000_11111_110".U
+  //
+  val ZEXT_H  = "b0000100_00000_100".U
+  val REV8    = "b0110100_11000_101".U
+  //
+  val ORC_B   = "b0010100_00111_101".U
+  //--------
 }
 
 object pc_sel_map {
