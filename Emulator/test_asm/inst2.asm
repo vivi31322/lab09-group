@@ -31,4 +31,10 @@ sh1add x13, x17, x18
 zext.h x14, x31
 orn x15, x25, x31
 hcf
+nop
+nop
+nop
+nop
+nop
+hcf
 hcf

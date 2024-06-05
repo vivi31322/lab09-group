@@ -30,4 +30,10 @@ sh2add x13, x17, x18
 rev8 x14, x25
 orc.b x15, x25
 hcf
+nop
+nop
+nop
+nop
+nop
+hcf
 hcf

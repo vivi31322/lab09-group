@@ -65,7 +65,7 @@ void translate_to_machine_code(uint8_t* mem,instr* imem, char* argv1){
 
 	char* path;
 	copy_path(argv1, &path);
-
+//改產生資料的檔名 by board2
 	FILE *mch_file = fopen(concat(path,"inst.hex"), "w");
 	FILE *inst_file = fopen(concat(path,"inst.asm"), "w");
 	FILE *data_file = fopen(concat(path,"data.hex"), "w");
