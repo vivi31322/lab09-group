@@ -33,7 +33,7 @@ sext.h x6, x5
 bset x7, x29, x19
 #x7=0x01e
 bclri x8, x31, 7 
-#x8=0xf7f
+#x8=0xffffff7f
 binvi x9, x16, 4 
 #x9=0x000
 bext x10, x21, x22 
@@ -48,5 +48,11 @@ zext.h x14, x31
 #x14=0000_ffff
 orn x15, x25, x31 
 #x15=0x6ad
+
+addi xo, x0, 0
+addi xo, x0, 0
+addi xo, x0, 0
+addi xo, x0, 0
+addi xo, x0, 0
 
 hcf
