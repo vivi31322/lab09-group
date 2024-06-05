@@ -425,7 +425,7 @@ void translate_to_machine_code(uint8_t* mem,instr* imem, char* argv1){
 			    binary = 0x0000000B;
 				  //board2 這裡跟lab8不一樣
 					//dexit = true;(原本lab9)
-					dexit = true;
+					//dexit = true;
 			break;
 
 			case MUL:
@@ -742,16 +742,16 @@ void translate_to_machine_code(uint8_t* mem,instr* imem, char* argv1){
     
     
 	//write five "nop" instructions at the end of the inst_file
-	/*for(int t=0; t<5;t++)
+	for(int t=0; t<5;t++)
 	{
 		fprintf(inst_file, "nop\n");
 		fprintf(mch_file, "%02x\n", 0x00);
 		fprintf(mch_file, "%02x\n", 0x00);
 		fprintf(mch_file, "%02x\n", 0x00);
 		fprintf(mch_file, "%02x\n", 0x00);
-	}*/
+	}
 	//write "hcf" in the inst_file
-	//fprintf(inst_file, "hcf\n");
+	fprintf(inst_file, "hcf\n");
 	//助教的寫法會多一行 by board2
   //不知為何 lab8 emulator 可以自己辨別有 hcf 就不加但這份不會
 	fprintf(inst_file, "hcf");
