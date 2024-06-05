@@ -33,14 +33,14 @@ class ALU extends Module{
   val8 := Mux(zero_cal(3), val16(7,0), val16(15,8))
   zero_cal(2) := (val8(7, 4) === 0.U)
   val4 := Mux(zero_cal(2), val8(3,0), val8(7,4))
-  zero_cal(1) := (val4(3,2) == 0.U)
+  zero_cal(1) := (val4(3,2) === 0.U)
   zero_cal(0) := Mux(zero_cal(1), ~val4(1), ~val4(3))
   // ----------- End of zero calculation -----------
 
-  val byte_all_zero = Wire(8.W(0.U))
-  val byte_all_one = Wire(8.W("b1111_1111".U))
+  val byte_all_zero = WireDefault(0.U(8.W))
+  val byte_all_one = WireDefault("b1111_1111".U(8.W))
 
-  io.out := 0.U
+  io.out := io.src1+io.src2
   switch(io.ALUSel){
     is(ADD ){io.out := io.src1+io.src2}
     is(SLL ){io.out := io.src1 << io.src2(4,0)}
@@ -67,21 +67,21 @@ class ALU extends Module{
     is (MAX  ) {io.out := Mux(io.src1.asSInt < io.src2.asSInt, io.src2 , io.src1)} // signed
     is (MINU ) {io.out := Mux(io.src1 < io.src2, io.src1 , io.src2)} // unsigned
     is (MAXU ) {io.out := Mux(io.src1 < io.src2, io.src2 , io.src1)} // unsigned
-    // TODO hw4 bset(i), bclr(i), binv(i), bext(i) 應該會從外部決定 src2 是 regFile 的值或是 imm 的值，所以這裡應當不用再寫 is (xxxxI) {}
-    is (BSET ) {io.out := io.src1 |  (1.U << (io.src2 & 31.U))} // rs1 with a single bit set at the index specified in rs2
-    is (BCLR ) {io.out := io.src1 & ~(1.U << (io.src2 & 31.U))} // rs1 with a single bit cleared at the index specified in rs2
-    is (BINV ) {io.out := io.src1 ^  (1.U << (io.src2 & 31.U))} // rs1 with a single bit inverted at the index specified in rs2
-    is (BEXT ) {io.out := (io.src1 >> (io.src2 & 31.U)) & 1.U}  // a single bit extracted from rs1 at the index specified in rs2
-    // TODO hw4 待確認 rori 的部分
-    is (ROR  ) {io.out := (io.src1 >> io.src2(4,0)) | (io.src2 << (32.U - io.src2(4,0)))} // a rotate right of rs1 by the amount in least-significant log2(XLEN) bits of rs2.
-    is (ROL  ) {io.out := (io.src1 << io.src2(4,0)) | (io.src2 >> (32.U - io.src2(4,0)))}
+    //  ql bset(i), bclr(i), binv(i), bext(i) 應該會從外部決定 src2 是 regFile 的值或是 imm 的值，所以這裡應當不用再寫 is (xxxxI) {}
+    is (BSET ) {io.out := io.src1 |  (1.U << io.src2(5,0))} // rs1 with a single bit set at the index specified in rs2
+    is (BCLR ) {io.out := io.src1 & ~(1.U << io.src2(5,0))} // rs1 with a single bit cleared at the index specified in rs2
+    is (BINV ) {io.out := io.src1 ^  (1.U << io.src2(5,0))} // rs1 with a single bit inverted at the index specified in rs2
+    is (BEXT ) {io.out := (io.src1 >> io.src2(5,0)) & 1.U}  // a single bit extracted from rs1 at the index specified in rs2
+    // 
+    is (ROR  ) {io.out := (io.src1 >> io.src2(4,0)) | (io.src1 << (32.U - io.src2(4,0)))} // a rotate right of rs1 by the amount in least-significant log2(XLEN) bits of rs2.
+    is (ROL  ) {io.out := (io.src1 << io.src2(4,0)) | (io.src1 >> (32.U - io.src2(4,0)))}
     //
     is (SHA1ADD) {io.out := (io.src2 + (io.src1 << 1))}
     is (SHA2ADD) {io.out := (io.src2 + (io.src1 << 2))}
     is (SHA3ADD) {io.out := (io.src2 + (io.src1 << 3))}
     //
-    is (ZEXT_H ) {io.out := Cat(Fill(16, 0), io.src1(15,0))} // {16{0}, io.src1[15:0]}
-    is (REV8   ) {io.out := Cat(Reverse(io.src1(31,24)), Reverse(io.src1(23,16)), Reverse(io.src1(15,8)), Reverse(io.src1(7,0)))} // Byte reverse
+    is (ZEXT_H ) {io.out := Cat(Fill(16, "b0".U), io.src1(15,0))} // {16{0}, io.src1[15:0]}
+    is (REV8   ) {io.out := Cat(io.src1(7,0), io.src1(15,8), io.src1(23,16), io.src1(31,24))} // 以 Byte 為單位換順序
     is (ORC_B  ) {io.out := Cat(Mux(io.src1(31, 24) === 0.U, byte_all_zero, byte_all_one), // 單個 byte 中若有 1，則整個 byte 為 0xff，否則整個 byte 為 0x0
                                 Mux(io.src1(23, 16) === 0.U, byte_all_zero, byte_all_one),
                                 Mux(io.src1(15,  8) === 0.U, byte_all_zero, byte_all_one),

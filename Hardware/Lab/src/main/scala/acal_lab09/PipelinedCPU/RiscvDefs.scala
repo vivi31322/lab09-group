@@ -7,6 +7,7 @@ import chisel3.util._
 // ql Bitmanip reference: 
 //  - https://raw.githubusercontent.com/riscv/riscv-bitmanip/master/bitmanip-draft.pdf p43 table
 //  - https://tools.cloudbear.ru/docs/riscv-bitmanip-1.0.0-20210612.pdf
+//  - https://five-embeddev.com/riscv-bitmanip/1.0.0/bitmanip.html
 
 object opcode_map { // ql 指令低 7 位：instruction[6:0]
   val LOAD = "b0000011".U
@@ -68,11 +69,11 @@ object alu_op_map { // ql 組成格式：{intr[31,25], intr[24,20], intr[14,12]}
   val MINU    = "b0000101_11111_101".U
   val MAX     = "b0000101_11111_110".U
   val MAXU    = "b0000101_11111_111".U
-  // 前七碼：intr[31,25] 不一樣
+  //
   val BSET    = "b0010100_11111_001".U
   val BCLR    = "b0100100_11111_001".U
   val BINV    = "b0110100_11111_001".U
-  val BEXT    = "b0100100_11111_001".U
+  val BEXT    = "b0100100_11111_101".U
   // 末三碼：instr[14,12] 不一樣
   val ROR     = "b0110000_11111_101".U
   val ROL     = "b0110000_11111_001".U
@@ -82,7 +83,9 @@ object alu_op_map { // ql 組成格式：{intr[31,25], intr[24,20], intr[14,12]}
   val SHA3ADD = "b0010000_11111_110".U
   //
   val ZEXT_H  = "b0000100_00000_100".U
-  val REV8    = "b0110100_11000_101".U // TODO QA ql hw4 rev8 的低七位是 OP_IMM "b0010011"，但是 rev8 看起來不用 extension 啊？？？？所以在 alu_op_map 中還是加上 REV8
+  val REV8    = "b0110100_11000_101".U
+  //
+  val ORC_B   = "b0010100_00111_101".U
   //--------
 }
 

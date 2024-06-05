@@ -73,8 +73,8 @@ class Controller(memAddrWidth: Int) extends Module {
 
   val EXE_opcode = io.EXE_Inst(6, 0)
   val EXE_funct3 = io.EXE_Inst(14, 12)
+  val EXE_rs2    = io.EXE_Inst(24, 20) // ql
   val EXE_funct7 = io.EXE_Inst(31, 25)
-  val EXE_rd = io.EXE_Inst(11, 7)
   val EXE_31_20 = io.EXE_Inst(31,20)
 
   val MEM_opcode = io.MEM_Inst(6, 0)
@@ -258,31 +258,68 @@ class Controller(memAddrWidth: Int) extends Module {
     STORE   -> 0.U,
   ))    // To Be Modified
   
-  io.E_BSel := MuxLookup(EXE_opcode, 0.U, Seq(
-    OP      -> 0.U,
-    OP_IMM  -> 1.U, // imm
-    LUI     -> 1.U,
-    AUIPC   -> 1.U, 
-    BRANCH  -> 1.U,
-    JAL     -> 1.U,
-    JALR    -> 1.U,
-    LOAD    -> 1.U,
-    STORE   -> 1.U,
-  ))
+  // ql hw4 判斷是否為 rev8 或 orc.b，這條指令的 opcode 是 OP_IMM，但是用到的都是 regfile 中的，不會用到 immediate number
+  val is_EXE_rev8 = Wire(Bool())
+  is_EXE_rev8 := (EXE_31_20 === "b011010011000".U) & (EXE_funct3 === "b101".U) & (EXE_opcode === OP_IMM)
+  val is_EXE_orcb = Wire(Bool())
+  is_EXE_orcb := (EXE_31_20 === "b001010000111".U) & (EXE_funct3 === "b101".U) & (EXE_opcode === OP_IMM)
+  io.E_BSel := Mux((is_EXE_rev8 | is_EXE_orcb), 0.U, 
+    MuxLookup(EXE_opcode, 0.U, Seq(
+      OP      -> 0.U,
+      OP_IMM  -> 1.U, // imm
+      LUI     -> 1.U,
+      AUIPC   -> 1.U, 
+      BRANCH  -> 1.U,
+      JAL     -> 1.U,
+      JALR    -> 1.U,
+      LOAD    -> 1.U,
+      STORE   -> 1.U,
+    )))
 
-  // self: srai should use SRA as alu_op, but will use SRL if this is not added
-  val is_srai = WireDefault(false.B)
-  is_srai := (EXE_opcode === OP_IMM && 
-              EXE_funct7 === "b0100000".U && 
-              EXE_funct3 === "b101".U) 
-  // io.E_BSel := 1.U // To Be Modified
-  val is_EXE_rev8 = Mux(EXE_31_20 === "b011010011000".U && EXE_funct3 === "101".U && EXE_opcode === OP_IMM, true.B, false.B) // ql hw4 判斷是否為 rev8，這條指令的 opcode 是 OP_IMM，但是用到的都是 regfile 中的，不會用到 immediate number
-  // io.E_BSel := Mux(EXE_opcode === OP || is_EXE_rev8, 0.U, 1.U) // ql OP(0b0110011) 代表 R-type，或者是 rev8，否則使用 ImmGen // TODO 要多測試一下這裡的判斷
-
-  io.E_ALUSel := MuxLookup(EXE_opcode, (Cat(0.U(7.W), "b11111".U, 0.U(3.W))), Seq( // TODO ql hw4 待確認需不需要修改 imm 的判斷 eg. bseti, binvi, ...
-    OP -> (Cat(EXE_funct7, "b11111".U, EXE_funct3)),
-    OP_IMM -> Mux(is_srai, Cat(EXE_funct7, "b11111".U, EXE_funct3), (Cat(0.U(7.W), "b11111".U, EXE_funct3))),
-  )) // To Be Modified, default: add
+  when(EXE_opcode === AUIPC || EXE_opcode === JAL || EXE_opcode === JALR || EXE_opcode === LOAD 
+      || EXE_opcode === STORE || EXE_opcode === LUI || EXE_opcode === BRANCH) {
+    io.E_ALUSel := Cat(0.U(7.W), "b11111".U, 0.U(3.W))
+  } .otherwise {
+    io.E_ALUSel := MuxLookup(Cat(EXE_funct7, EXE_funct3), (Cat(0.U(7.W), "b11111".U, EXE_funct3)), Seq(
+      "b0000000_000".U -> ADD,
+      "b0000000_001".U -> SLL,
+      "b0000000_010".U -> SLT,
+      "b0000000_011".U -> SLTU,
+      "b0000000_100".U -> XOR,
+      "b0000000_101".U -> SRL,
+      "b0000000_110".U -> OR,
+      "b0000000_111".U -> AND,
+      "b0100000_000".U -> SUB,
+      "b0100000_101".U -> SRA,
+      //
+      "b0110000_001".U -> MuxLookup(EXE_rs2, ROL, Seq(
+        0.U -> CLZ,
+        1.U -> CTZ,
+        2.U -> CPOP,
+        4.U -> SEXT_B,
+        5.U -> SEXT_H
+      )), 
+      "b0100000_111".U -> ANDN,
+      "b0100000_110".U -> ORN,
+      "b0100000_100".U -> XNOR,
+      "b0000101_100".U -> MIN,
+      "b0000101_101".U -> MINU,
+      "b0000101_110".U -> MAX, 
+      "b0000101_111".U -> MAXU, 
+      "b0010100_001".U -> BSET,
+      "b0100100_001".U -> BCLR,
+      "b0110100_001".U -> BINV,
+      "b0100100_101".U -> BEXT,
+      "b0110000_101".U -> ROR,
+      "b0010000_010".U -> SHA1ADD,
+      "b0010000_100".U -> SHA2ADD,
+      "b0010000_110".U -> SHA3ADD,
+      // 如果 [24,20] 是固定的數，不滿足則代表 undefined
+      "b0000100_100".U -> Mux(EXE_rs2 === 0.U, ZEXT_H, 0.U), 
+      "b0110100_101".U -> Mux(EXE_rs2 === "b11000".U, REV8, 0.U),
+      "b0010100_101".U -> Mux(EXE_rs2 === "b00111".U, ORC_B, 0.U),
+    ))
+  }
 
   // Control signal - Data Memory
   io.DM_Mem_R := (MEM_opcode===LOAD)
@@ -313,7 +350,7 @@ class Controller(memAddrWidth: Int) extends Module {
   )) // To Be Modified
 
   // Control signal - Others
-  io.Hcf := (IF_opcode === HCF)
+  io.Hcf := (IF_opcode === HCF) // FIXME ql 如果直接在 IF 判斷 HCF 就結束執行，那麼最後在 HCF 之前的幾個指令不會被執行到，因為那幾個指令還在 pipeline 中
 
   /****************** Data Hazard ******************/
   io.Stall_WB_ID_DH := (is_D_rs1_E_rd_overlap || is_D_rs2_E_rd_overlap)
